@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  recommendation-service:
+    image: filmhub-recommendation-service:latest
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints:
+          - node.role == worker
+    networks:
+      - filmhub-network
+    environment:
+      - SERVICE_NAME=recommendation-service
+
+  email-notification-service:
+    image: filmhub-email-notification-service:latest
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints:
+          - node.role == worker
+    networks:
+      - filmhub-network
+    environment:
+      - SERVICE_NAME=email-notification-service
+
+  nginx:
+    image: filmhub-nginx:latest
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    ports:
+      - "80:80"
+    networks:
+      - filmhub-network
+    depends_on:
+      - recommendation-service
+      - email-notification-service
+
+networks:
+  filmhub-network:
+    driver: overlay
