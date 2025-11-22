@@ -1,0 +1,55 @@
+
+
+services:
+  recommendation-service:
+    build: ./recommendation-service
+    container_name: filmhub-recommendation-service
+    ports:
+      - "8001:8001"
+    networks:
+      - filmhub-network
+    environment:
+      - SERVICE_NAME=recommendation-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  email-notification-service:
+    build: ./email-notification-service
+    container_name: filmhub-email-service
+    ports:
+      - "8002:8002"
+    networks:
+      - filmhub-network
+    environment:
+      - SERVICE_NAME=email-notification-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  nginx:
+    build: ./nginx
+    container_name: filmhub-nginx
+    ports:
+      - "80:80"
+    networks:
+      - filmhub-network
+    depends_on:
+      - recommendation-service
+      - email-notification-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  filmhub-network:
+    driver: bridge
